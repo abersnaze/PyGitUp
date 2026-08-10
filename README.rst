@@ -198,6 +198,28 @@ The original ``git-up`` has been written by aanand:
 Changelog
 ---------
 
+v2.5.0 (*2026-08-10*)
+~~~~~~~~~~~~~~~~~~~~~
+
+- Support rebasing branches that are checked out in worktrees. Branches whose
+  worktree has an operation in progress are skipped. Thanks
+  `@abersnaze <https://github.com/abersnaze>`_ for `Pull Request #145
+  <https://github.com/msiemens/PyGitUp/pull/145>`_.
+- Add ``git-up.rebase.conflict-resolver`` to run a command when a rebase
+  conflict occurs. Thanks `@abersnaze <https://github.com/abersnaze>`_ for
+  `Pull Request #146 <https://github.com/msiemens/PyGitUp/pull/146>`_.
+- Add ``git-up.fetch.progress`` to make ``git fetch`` more verbose. Thanks
+  `@agido-malter <https://github.com/agido-malter>`_ for `Pull Request #148
+  <https://github.com/msiemens/PyGitUp/pull/148>`_.
+- Fix a command injection in ``git-up.rebase.log-hook``: branch and remote
+  names are now passed to the hook through the environment instead of a
+  command line, so names containing shell metacharacters are no longer
+  executed as commands. This affects both the ``cmd.exe`` and the ``sh``
+  code path.
+- Fix a crash on ``git`` output that is not valid UTF-8.
+- Fix worktree detection on MinGW.
+- Update dependencies.
+
 v2.4.0 (*2025-12-27*)
 ~~~~~~~~~~~~~~~~~~~~~
 
