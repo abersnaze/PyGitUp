@@ -43,7 +43,10 @@ and using this port are:
 How do I install it?
 --------------------
 
-1. Install ``git-up`` via `pip <https://pip.pypa.io/en/latest/installing.html>`__: ``$ uv tool install git-up``
+1. Install ``git-up`` via `uv <https://docs.astral.sh/uv/>`__:
+   ``$ uv tool install git-up`` (or via
+   `pip <https://pip.pypa.io/en/latest/installing.html>`__:
+   ``$ pip install git-up``)
 2. ``cd`` to your project's directory.
 3. Run ``git up`` and enjoy!
 
@@ -55,11 +58,13 @@ How to run it locally?
 Could also checkout the **.github/workflows/ci-workflow.yml**
 
 1. clone repo and ``cd`` to repo directory.
-2. Install ``poetry`` as guided by `poetry installation doc <https://python-poetry.org/docs/#installation>`__
-3. Run ``poetry install``
-4. Run program with ``poetry run git-up``
-5. Run all tests with ``poetry run pytest -v --cov=PyGitUp`` or ``poetry run pytest -v --cov=PyGitUp --cov-report html``
-6. Run one test with ``poetry run pytest -q PyGitUp/tests/test_version.py -v --cov=PyGitUp``
+2. Install ``uv`` as guided by the `uv installation doc <https://docs.astral.sh/uv/getting-started/installation/>`__
+3. Run ``uv sync``
+4. Run program with ``uv run git-up``
+5. Run all tests with ``uv run pytest -v --cov=PyGitUp`` or ``uv run pytest -v --cov=PyGitUp --cov-report html``
+6. Run one test with ``uv run pytest -q PyGitUp/tests/test_version.py -v --cov=PyGitUp``
+
+See also `CONTRIBUTING.md <CONTRIBUTING.md>`__.
 
 Note for Windows users:
 ~~~~~~~~~~~~~~~~~~~~~~~
