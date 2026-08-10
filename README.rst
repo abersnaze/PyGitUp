@@ -152,13 +152,23 @@ options:
    repository's working directory while the rebase is still in progress,
    so the command can inspect the conflict itself (e.g. via
    ``git status``, ``git diff``) and is expected to resolve all
-   conflicts, stage the files, and run ``git rebase --continue``. If it
-   exits with code 0 and the rebase is complete, ``git up`` continues to
-   the next branch. If it fails, the repo is left in the conflicted
-   state for manual resolution.
+   conflicts, stage the files, and run ``git rebase --continue``.
+
+   Afterwards ``git up`` checks that the branch actually contains the
+   target commit. Only then does it continue to the next branch. If the
+   command exits non-zero, or exits 0 without completing the rebase (for
+   example because it gave up and ran ``git rebase --abort``), ``git up``
+   reports the branch as unresolved and stops, leaving it for manual
+   resolution.
+
+   The command is only run for genuine conflicts. Rebases that fail for
+   other reasons — untracked files that would be overwritten, an invalid
+   ``git-up.rebase.arguments`` — report their original error instead.
 
    Environment variables ``GITUP_BRANCH``, ``GITUP_TARGET``, and
-   ``GITUP_REPO_PATH`` are also set for the resolver process.
+   ``GITUP_REPO_PATH`` are also set for the resolver process. Note that
+   the command is run through the system shell, which is ``cmd.exe`` on
+   Windows — the single-quoted examples below need double quotes there.
 
    Examples::
 

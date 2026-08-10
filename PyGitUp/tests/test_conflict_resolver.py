@@ -22,6 +22,8 @@ test_name_fail = 'conflict_resolve_fail'
 test_name_noresolver = 'conflict_no_resolver'
 test_name_context = 'conflict_resolve_context'
 test_name_worktree = 'conflict_resolve_worktree'
+test_name_abort = 'conflict_resolve_abort'
+test_name_untracked = 'conflict_resolve_untracked'
 
 repo_path_success = join(basepath, test_name_success + os.sep)
 repo_path_fail = join(basepath, test_name_fail + os.sep)
@@ -29,6 +31,8 @@ repo_path_noresolver = join(basepath, test_name_noresolver + os.sep)
 repo_path_context = join(basepath, test_name_context + os.sep)
 repo_path_worktree = join(basepath, test_name_worktree + os.sep)
 worktree_path_worktree = join(basepath, test_name_worktree + '-wt' + os.sep)
+repo_path_abort = join(basepath, test_name_abort + os.sep)
+repo_path_untracked = join(basepath, test_name_untracked + os.sep)
 
 
 def setup_conflict_repo(test_name):
@@ -125,12 +129,33 @@ def setup_worktree_conflict(test_name, worktree_path):
     return master, repo, wt_branch
 
 
+def setup_untracked_repo(test_name):
+    """
+    Set up a repo whose rebase fails without any conflict: master adds a
+    file that already exists untracked in the working directory.
+    """
+    master_path, master = init_master(test_name)
+    master.git.checkout(b=test_name)
+
+    path = join(basepath, test_name)
+    master.clone(path, b=test_name)
+    repo = Repo(path, odbt=GitCmdObjectDB)
+    assert repo.working_dir == path
+
+    update_file(master, test_name, filename='test1.txt')
+    write_file(join(path, 'test1.txt'), 'Hello world!')
+
+    return master, repo
+
+
 def setup_module():
     global master_success, repo_success
     global master_fail, repo_fail
     global master_noresolver, repo_noresolver
     global master_context, repo_context
     global master_worktree, repo_worktree, worktree_branch
+    global master_abort, repo_abort
+    global master_untracked, repo_untracked
 
     master_success, repo_success = setup_conflict_repo(test_name_success)
     master_fail, repo_fail = setup_conflict_repo(test_name_fail)
@@ -140,6 +165,10 @@ def setup_module():
     master_context, repo_context = setup_conflict_repo(test_name_context)
     master_worktree, repo_worktree, worktree_branch = (
         setup_worktree_conflict(test_name_worktree, worktree_path_worktree)
+    )
+    master_abort, repo_abort = setup_conflict_repo(test_name_abort)
+    master_untracked, repo_untracked = setup_untracked_repo(
+        test_name_untracked
     )
 
 
@@ -249,3 +278,57 @@ def test_resolver_in_worktree():
     assert os.path.realpath(repo_path) == os.path.realpath(
         worktree_path_worktree.rstrip(os.sep)
     )
+
+
+def test_resolver_aborts():
+    """
+    A resolver that gives up via 'git rebase --abort' exits 0 but leaves
+    the branch un-rebased. That must not be reported as a success.
+    """
+    os.chdir(repo_path_abort)
+
+    script = make_resolver_script(repo_path_abort, (
+        '#!/bin/bash\n'
+        'git rebase --abort\n'
+        'exit 0\n'
+    ))
+
+    before = repo_abort.head.commit.hexsha
+
+    from PyGitUp.gitup import GitUp
+    gitup = GitUp(testing=True)
+    gitup.settings['rebase.conflict-resolver'] = script
+
+    with pytest.raises(UnresolvedConflictError):
+        gitup.run()
+
+    # The abort cleared the rebase state, so only a positive check on the
+    # branch itself can catch this.
+    assert repo_abort.head.commit.hexsha == before
+
+
+def test_resolver_not_invoked_without_conflict():
+    """
+    Rebases that fail for non-conflict reasons keep reporting their
+    original RebaseError instead of running the resolver.
+    """
+    os.chdir(repo_path_untracked)
+
+    marker = join(basepath, 'resolver-untracked.txt')
+    if os.path.exists(marker):
+        os.remove(marker)
+
+    script = make_resolver_script(repo_path_untracked, (
+        '#!/bin/bash\n'
+        'echo ran > "{marker}"\n'
+        'exit 0\n'
+    ).format(marker=marker))
+
+    from PyGitUp.gitup import GitUp
+    gitup = GitUp(testing=True)
+    gitup.settings['rebase.conflict-resolver'] = script
+
+    with pytest.raises(RebaseError):
+        gitup.run()
+
+    assert not os.path.exists(marker), 'resolver ran without a conflict'

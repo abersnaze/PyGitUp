@@ -374,15 +374,20 @@ class RebaseError(GitError):
 
 class UnresolvedConflictError(GitError):
     """
-    Rebase conflict could not be resolved. Repo left in conflicted state.
+    The conflict resolver did not complete the rebase.
     """
 
-    def __init__(self, branch_name, target_branch, repo_path, **kwargs):
+    def __init__(self, branch_name, target_branch, repo_path, reason=None,
+                 **kwargs):
         kwargs.pop('message', None)
         message = (
             f"Failed to resolve rebase conflicts for {branch_name} "
             f"onto {target_branch}.\n"
-            f"The repo at {repo_path} is left in a conflicted state.\n"
-            f"Resolve manually, then run: git rebase --continue"
+        )
+        if reason:
+            message += reason + '\n'
+        message += (
+            f"The repo at {repo_path} may be left in a conflicted state.\n"
+            f"Check `git status` and resolve manually."
         )
         GitError.__init__(self, message, **kwargs)
